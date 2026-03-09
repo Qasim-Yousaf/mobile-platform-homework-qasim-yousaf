@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
 
@@ -13,11 +13,24 @@ const ALL_ITEMS = [
 
 const FILTERS = ['All', 'Popular', 'New'];
 
-export default function ExploreScreen() {
+type Props = {
+  externalFilter?: { filter: string; sort?: string } | null;
+};
+
+export default function ExploreScreen({ externalFilter }: Props) {
   const { theme } = useTheme();
   const dark = theme === 'dark';
   const [filter, setFilter] = useState('All');
   const [sortAsc, setSortAsc] = useState(true);
+
+  useEffect(() => {
+    if (externalFilter) {
+      setFilter(externalFilter.filter);
+      if (externalFilter.sort) {
+        setSortAsc(externalFilter.sort === 'A-Z');
+      }
+    }
+  }, [externalFilter]);
 
   const filtered = ALL_ITEMS
     .filter(item => filter === 'All' || item.category === filter)

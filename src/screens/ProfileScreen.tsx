@@ -5,7 +5,12 @@ import { useTheme } from '../context/ThemeContext';
 
 const PREFS_KEY = 'user_preferences';
 
-export default function ProfileScreen() {
+type Props = {
+  pendingPref?: { key: string; value: boolean } | null;
+  onPrefApplied?: () => void;
+};
+
+export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
   const { theme, darkMode, setDarkMode } = useTheme();
   const dark = theme === 'dark';
   const [notifications, setNotifications] = useState(true);
@@ -19,12 +24,22 @@ export default function ProfileScreen() {
     });
   }, []);
 
-  function toggleNotifications() {
-    const updated = !notifications;
-    setNotifications(updated);
+  useEffect(() => {
+    if (!pendingPref) return;
+    if (pendingPref.key === 'notifications') {
+      applyNotifications(pendingPref.value);
+    }
+    if (pendingPref.key === 'darkMode') {
+      setDarkMode(pendingPref.value);
+    }
+    onPrefApplied?.();
+  }, [pendingPref]);
+
+  function applyNotifications(value: boolean) {
+    setNotifications(value);
     AsyncStorage.getItem(PREFS_KEY).then(val => {
       const prefs = val ? JSON.parse(val) : {};
-      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ ...prefs, notifications: updated }));
+      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ ...prefs, notifications: value }));
     });
   }
 
@@ -35,7 +50,7 @@ export default function ProfileScreen() {
       <View style={[styles.section, { backgroundColor: dark ? '#222' : '#f2f2f2' }]}>
         <View style={[styles.row, { borderBottomColor: dark ? '#333' : '#e0e0e0' }]}>
           <Text style={[styles.label, { color: dark ? '#fff' : '#000' }]}>Notifications</Text>
-          <Switch value={notifications} onValueChange={toggleNotifications} />
+          <Switch value={notifications} onValueChange={v => applyNotifications(v)} />
         </View>
         <View style={[styles.row, { borderBottomWidth: 0 }]}>
           <Text style={[styles.label, { color: dark ? '#fff' : '#000' }]}>Dark Mode</Text>
