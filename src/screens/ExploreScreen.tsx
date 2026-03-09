@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useTheme } from '../context/ThemeContext';
+import { ALLOWED_FILTERS } from '../lib/constants';
 
 const ALL_ITEMS = [
   { id: '1', name: 'Alpha Feature', category: 'Popular' },
@@ -10,8 +11,6 @@ const ALL_ITEMS = [
   { id: '5', name: 'Echo Layer', category: 'Popular' },
   { id: '6', name: 'Foxtrot API', category: 'New' },
 ];
-
-const FILTERS = ['All', 'Popular', 'New'];
 
 type Props = {
   externalFilter?: { filter: string; sort?: string } | null;
@@ -40,7 +39,7 @@ export default function ExploreScreen({ externalFilter }: Props) {
     <View style={[styles.container, { backgroundColor: dark ? '#111' : '#fff' }]}>
       <View style={styles.controls}>
         <View style={styles.filters}>
-          {FILTERS.map(f => (
+          {ALLOWED_FILTERS.map(f => (
             <TouchableOpacity
               key={f}
               style={[styles.filterBtn, { backgroundColor: filter === f ? (dark ? '#fff' : '#000') : (dark ? '#333' : '#eee') }]}

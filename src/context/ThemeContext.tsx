@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-const PREFS_KEY = 'user_preferences';
+import { PREFS_STORAGE_KEY } from '../lib/constants';
 
 type Theme = 'light' | 'dark';
 
@@ -21,7 +20,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [darkMode, setDarkModeState] = useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(PREFS_KEY).then(val => {
+    AsyncStorage.getItem(PREFS_STORAGE_KEY).then(val => {
       if (val) {
         const prefs = JSON.parse(val);
         setDarkModeState(prefs.darkMode ?? false);
@@ -31,9 +30,9 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   function setDarkMode(val: boolean) {
     setDarkModeState(val);
-    AsyncStorage.getItem(PREFS_KEY).then(existing => {
+    AsyncStorage.getItem(PREFS_STORAGE_KEY).then(existing => {
       const prefs = existing ? JSON.parse(existing) : {};
-      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ ...prefs, darkMode: val }));
+      AsyncStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ ...prefs, darkMode: val }));
     });
   }
 

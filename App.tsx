@@ -9,14 +9,9 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import { AgentProvider, useAgent } from './src/agent/AgentContext';
 import AgentFlyout from './src/agent/AgentFlyout';
+import { TAB_ICONS } from './src/lib/constants';
 
 const Tab = createBottomTabNavigator();
-
-const TAB_ICONS: Record<string, string> = {
-  Home: 'home-outline',
-  Explore: 'compass-outline',
-  Profile: 'person-outline',
-};
 
 function AppTabs() {
   const { theme } = useTheme();

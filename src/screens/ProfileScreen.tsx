@@ -3,8 +3,7 @@ import { View, Text, StyleSheet, Switch, ScrollView, RefreshControl } from 'reac
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
 import { getLog, LogEntry } from '../agent/CommandRouter';
-
-const PREFS_KEY = 'user_preferences';
+import { PREFS_STORAGE_KEY } from '../lib/constants';
 
 type Props = {
   pendingPref?: { key: string; value: boolean } | null;
@@ -18,7 +17,7 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
   const [log, setLog] = useState<LogEntry[]>([]);
 
   useEffect(() => {
-    AsyncStorage.getItem(PREFS_KEY).then(val => {
+    AsyncStorage.getItem(PREFS_STORAGE_KEY).then(val => {
       if (val) {
         const prefs = JSON.parse(val);
         setNotifications(prefs.notifications ?? true);
@@ -43,9 +42,9 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
 
   function applyNotifications(value: boolean) {
     setNotifications(value);
-    AsyncStorage.getItem(PREFS_KEY).then(val => {
+    AsyncStorage.getItem(PREFS_STORAGE_KEY).then(val => {
       const prefs = val ? JSON.parse(val) : {};
-      AsyncStorage.setItem(PREFS_KEY, JSON.stringify({ ...prefs, notifications: value }));
+      AsyncStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify({ ...prefs, notifications: value }));
     });
   }
 
