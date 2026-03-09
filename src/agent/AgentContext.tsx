@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useRef } from 'react';
 import { dispatch, confirmEntry, rejectEntry, getLog, LogEntry, Command } from './CommandRouter';
+import { writeAuditLog } from '../lib/AuditLogModule';
 
 type Message = {
   id: string;
@@ -166,6 +167,14 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
 
     executeCommand(command, nav, applyFilter, setPref);
+
+    if (command.name === 'exportAuditLog') {
+      writeAuditLog(command.params.log)
+        .then(path => addMessage({ role: 'agent', text: `Log exported to: ${path}` }))
+        .catch(() => addMessage({ role: 'agent', text: 'Export failed.' }));
+      return;
+    }
+
     addMessage({ role: 'agent', text: `Done: ${command.name}` });
 
     if (command.name === 'closeFlyout') {
