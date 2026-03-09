@@ -18,3 +18,6 @@ A stack navigator would have added back-button semantics that don't fit a flat 3
 
 **5. Persisting command log to AsyncStorage**
 Storing the log in AsyncStorage would survive app restarts but adds async complexity to every dispatch. For this scope the in-memory log is sufficient — it resets on restart, and the `exportAuditLog` command writes it to disk when needed. Persistence can be added later without changing the Command Router interface.
+
+**6. `react-native-vector-icons` for tab bar icons; `async-storage` pinned to v2.1.2**
+Unicode fallback characters looked broken on both platforms. `react-native-vector-icons` (Ionicons) solves this with one font file. On iOS the TTFs are added to the Xcode project and declared in `UIAppFonts`; on Android `fonts.gradle` handles it automatically. `@react-native-async-storage/async-storage` is pinned to `2.1.2` — v3.0.1 pulls a private Maven artifact (`org.asyncstorage.shared_storage:storage-android:1.0.0`) that is not resolvable and breaks the Android build.

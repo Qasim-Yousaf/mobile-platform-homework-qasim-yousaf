@@ -10,6 +10,7 @@ npm install
 cd ios && pod install && cd ..
 npx react-native run-ios
 ```
+After `pod install`, open `ios/AgentApp.xcworkspace` in Xcode, verify `Ionicons.ttf` and `MaterialIcons.ttf` are in the target's *Copy Bundle Resources* phase, then build once from Xcode before using the CLI.
 
 **Android**
 ```bash
@@ -21,26 +22,27 @@ Requires Node >= 22, Xcode 16+, Android Studio with an emulator running.
 
 ## Architecture (TL;DR)
 
-Three screens (Home, Explore, Profile) with a persistent agent bottom sheet. The agent parses natural language into structured commands. Every command passes through `CommandRouter`: allowlist check → schema validation → confirmation gate → execution → log entry. The agent never touches UI directly — it emits commands, the router decides what runs. Native modules in Swift and Kotlin handle audit log export to device storage.
+Three screens (Home, Explore, Profile) with a persistent agent bottom sheet. The agent parses natural language into structured commands, which pass through `CommandRouter`: allowlist check → schema validation → confirmation gate → execution → log entry. The agent never touches UI directly — it emits commands, the router decides what runs. Swift and Kotlin native modules handle audit log export to device storage.
 
 ## Key decisions
 
-- Command Router is pure TS with no React dependency — testable in isolation
+- Command Router is pure TS, no React — testable in isolation
 - Dark mode is a user preference (AsyncStorage), not system theme
 - Bottom tabs over stack nav — agent `navigate` jumps directly, no history needed
 - `setPreference` always requires confirmation — other commands are non-destructive
-- In-memory log only — `exportAuditLog` writes to disk on demand
-- Native module written from scratch, no third-party FS library
-- `src/lib/constants.ts` owns all allowed values — single source of truth
-- AgentContext owns NLP parsing and message state, separate from routing logic
-- Props-based filter/preference injection keeps screens decoupled from agent
-- Rejected: AsyncStorage for log (overkill for scope), NativeWind (unnecessary at this stage)
+- In-memory log — `exportAuditLog` writes to disk on demand
+- Native audit module from scratch, no third-party FS library
+- `src/lib/constants.ts` is the single source of truth for all allowed values
+- AgentContext owns NLP and message state, separate from routing logic
+- Props-based injection keeps screens decoupled from agent
+- `react-native-vector-icons` (Ionicons) — TTFs in `Info.plist` (iOS) and `fonts.gradle` (Android)
+- Rejected: AsyncStorage for log (overkill), NativeWind (unnecessary)
 
 ## AI disclosure
 
 - **Tools used:** GitHub Copilot (VS Code), ChatGPT for sanity checks
 - **Used for:** Boilerplate screen layout, StyleSheet values, Swift/Kotlin file write syntax
-- **My decisions:** Command Router design, confirmation policy, context split (Theme vs Agent), prop injection pattern for screen control, all architecture choices
+- **My decisions:** Command Router design, confirmation policy, context split, prop injection pattern, all architecture choices
 - **My writing:** This README, decisions.md, CONTEXT.md — written directly, not generated
 
 ## Demo script
@@ -56,14 +58,14 @@ Three screens (Home, Explore, Profile) with a persistent agent bottom sheet. The
 
 ## One meaningful test
 
-`CommandRouter.test.ts` proves the core command safety contract: invalid commands are rejected before execution with a specific reason, `setPreference` never executes without going through `pending_confirmation` first, and confirming a pending entry moves it to `executed` while rejecting moves it to `rejected` with reason "User rejected". This test proves the UI can never bypass the confirmation gate even if called directly.
+`CommandRouter.test.ts` proves the command safety contract: invalid commands are rejected with a specific reason before execution, `setPreference` always goes to `pending_confirmation` (never executes directly), confirming a pending entry moves it to `executed`, and rejecting moves it to `rejected` with reason "User rejected". The test proves the UI can never bypass the confirmation gate.
 
 ## Next steps
 
 - Persist command log across sessions (AsyncStorage or SQLite)
-- Expand NLP parsing with a lightweight LLM call for free-form commands
+- Expand NLP with a lightweight LLM call for free-form input
 - Add `showAlert` and `exportAuditLog` to confirmation policy
-- Web portal with deep links (explore?filter=Popular, profile, /?prompt=...)
+- Web portal with deep links (explore?filter=Popular, /?prompt=...)
 - Command undo — reverse last executed state change
 
 ## Submission checklist
