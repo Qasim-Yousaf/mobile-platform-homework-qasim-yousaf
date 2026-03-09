@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { NavigationContainer, NavigationContainerRef } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 import HomeScreen from './src/screens/HomeScreen';
 import ExploreScreen from './src/screens/ExploreScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
@@ -10,6 +11,12 @@ import { AgentProvider, useAgent } from './src/agent/AgentContext';
 import AgentFlyout from './src/agent/AgentFlyout';
 
 const Tab = createBottomTabNavigator();
+
+const TAB_ICONS: Record<string, string> = {
+  Home: 'home-outline',
+  Explore: 'compass-outline',
+  Profile: 'person-outline',
+};
 
 function AppTabs() {
   const { theme } = useTheme();
@@ -35,7 +42,7 @@ function AppTabs() {
   return (
     <NavigationContainer ref={navRef}>
       <Tab.Navigator
-        screenOptions={{
+        screenOptions={({ route }) => ({
           headerStyle: { backgroundColor: dark ? '#1a1a1a' : '#fff' },
           headerTintColor: dark ? '#fff' : '#000',
           headerRight: () => (
@@ -45,8 +52,11 @@ function AppTabs() {
           ),
           tabBarStyle: { backgroundColor: dark ? '#1a1a1a' : '#fff' },
           tabBarActiveTintColor: dark ? '#fff' : '#000',
-          tabBarInactiveTintColor: dark ? '#888' : '#aaa',
-        }}>
+          tabBarInactiveTintColor: dark ? '#555' : '#aaa',
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name={TAB_ICONS[route.name]} size={size} color={color} />
+          ),
+        })}>
         <Tab.Screen name="Home" component={HomeScreen} />
         <Tab.Screen name="Explore">
           {() => <ExploreScreen externalFilter={exploreFilter} />}
@@ -88,3 +98,5 @@ const styles = StyleSheet.create({
     fontSize: 13,
   },
 });
+
+
