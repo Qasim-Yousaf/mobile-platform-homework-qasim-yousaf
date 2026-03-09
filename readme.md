@@ -1,97 +1,79 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# AgentApp
 
-# Getting Started
+A React Native app where an anchored agent chat controls the UI through a validated, auditable command pipeline.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Setup
 
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
-
-```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+**iOS**
+```bash
+npm install
+cd ios && pod install && cd ..
+npx react-native run-ios
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
-
-```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+**Android**
+```bash
+npm install
+npx react-native run-android
 ```
 
-### iOS
+Requires Node >= 22, Xcode 16+, Android Studio with an emulator running.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## Architecture (TL;DR)
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+Three screens (Home, Explore, Profile) with a persistent agent bottom sheet. The agent parses natural language into structured commands. Every command passes through `CommandRouter`: allowlist check → schema validation → confirmation gate → execution → log entry. The agent never touches UI directly — it emits commands, the router decides what runs. Native modules in Swift and Kotlin handle audit log export to device storage.
 
-```sh
-bundle install
-```
+## Key decisions
 
-Then, and every time you update your native dependencies, run:
+- Command Router is pure TS with no React dependency — testable in isolation
+- Dark mode is a user preference (AsyncStorage), not system theme
+- Bottom tabs over stack nav — agent `navigate` jumps directly, no history needed
+- `setPreference` always requires confirmation — other commands are non-destructive
+- In-memory log only — `exportAuditLog` writes to disk on demand
+- Native module written from scratch, no third-party FS library
+- `src/lib/constants.ts` owns all allowed values — single source of truth
+- AgentContext owns NLP parsing and message state, separate from routing logic
+- Props-based filter/preference injection keeps screens decoupled from agent
+- Rejected: AsyncStorage for log (overkill for scope), NativeWind (unnecessary at this stage)
 
-```sh
-bundle exec pod install
-```
+## AI disclosure
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+- **Tools used:** GitHub Copilot (VS Code), ChatGPT for sanity checks
+- **Used for:** Boilerplate screen layout, StyleSheet values, Swift/Kotlin file write syntax
+- **My decisions:** Command Router design, confirmation policy, context split (Theme vs Agent), prop injection pattern for screen control, all architecture choices
+- **My writing:** This README, decisions.md, CONTEXT.md — written directly, not generated
 
-```sh
-# Using npm
-npm run ios
+## Demo script
 
-# OR using Yarn
-yarn ios
-```
+1. Launch app — Home screen with stat cards
+2. Tap **Agent** button → flyout opens with welcome message
+3. Type `what can you do?` → agent responds with capability list
+4. Type `go to explore` → app navigates to Explore tab
+5. Type `filter popular` → list filters to Popular items
+6. Type `enable dark mode` → Proposed Action card appears
+7. Tap **Confirm** → entire app switches to dark mode
+8. Go to Profile → scroll down → Agent Activity Log shows all commands with status badges
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## One meaningful test
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+`CommandRouter.test.ts` proves the core command safety contract: invalid commands are rejected before execution with a specific reason, `setPreference` never executes without going through `pending_confirmation` first, and confirming a pending entry moves it to `executed` while rejecting moves it to `rejected` with reason "User rejected". This test proves the UI can never bypass the confirmation gate even if called directly.
 
-## Step 3: Modify your app
+## Next steps
 
-Now that you have successfully run the app, let's make changes!
+- Persist command log across sessions (AsyncStorage or SQLite)
+- Expand NLP parsing with a lightweight LLM call for free-form commands
+- Add `showAlert` and `exportAuditLog` to confirmation policy
+- Web portal with deep links (explore?filter=Popular, profile, /?prompt=...)
+- Command undo — reverse last executed state change
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+## Submission checklist
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+- [x] Repo named `mobile-platform-homework-qasim-yousaf` and default branch is `main`
+- [x] README includes Setup commands for iOS + Android
+- [x] README word count <= 500 (excluding commands/checkboxes)
+- [x] `agent/CONTEXT.md` included
+- [x] `artifacts/decisions.md` included (<= 400 words)
+- [x] `artifacts/architecture.md` included
+- [ ] `artifacts/demo-ios.mp4` and `artifacts/demo-android.mp4` included
+- [x] One meaningful test included and described
+- [x] AI disclosure included
