@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Switch } from 'react-native';
+import { View, Text, StyleSheet, Switch, ScrollView, RefreshControl } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { getLog, LogEntry } from '../agent/CommandRouter';
 
 const PREFS_KEY = 'user_preferences';
 
@@ -14,6 +15,7 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
   const { theme, darkMode, setDarkMode } = useTheme();
   const dark = theme === 'dark';
   const [notifications, setNotifications] = useState(true);
+  const [log, setLog] = useState<LogEntry[]>([]);
 
   useEffect(() => {
     AsyncStorage.getItem(PREFS_KEY).then(val => {
@@ -23,6 +25,10 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
       }
     });
   }, []);
+
+  useEffect(() => {
+    setLog(getLog());
+  }, [pendingPref]);
 
   useEffect(() => {
     if (!pendingPref) return;
@@ -43,8 +49,21 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
     });
   }
 
+  function refreshLog() {
+    setLog(getLog());
+  }
+
+  const statusColor = (status: LogEntry['status']) => {
+    if (status === 'executed') return '#34c759';
+    if (status === 'rejected') return '#ff3b30';
+    return '#ff9500';
+  };
+
   return (
-    <View style={[styles.container, { backgroundColor: dark ? '#111' : '#fff' }]}>
+    <ScrollView
+      style={{ backgroundColor: dark ? '#111' : '#fff' }}
+      contentContainerStyle={styles.container}
+      refreshControl={<RefreshControl refreshing={false} onRefresh={refreshLog} />}>
       <Text style={[styles.name, { color: dark ? '#fff' : '#000' }]}>Qasim Yousaf</Text>
       <Text style={[styles.role, { color: dark ? '#aaa' : '#888' }]}>Mobile Platform Lead</Text>
       <View style={[styles.section, { backgroundColor: dark ? '#222' : '#f2f2f2' }]}>
@@ -57,15 +76,37 @@ export default function ProfileScreen({ pendingPref, onPrefApplied }: Props) {
           <Switch value={darkMode} onValueChange={setDarkMode} />
         </View>
       </View>
-    </View>
+
+      <Text style={[styles.sectionTitle, { color: dark ? '#fff' : '#000' }]}>Agent Activity Log</Text>
+      {log.length === 0 ? (
+        <Text style={[styles.emptyLog, { color: dark ? '#666' : '#aaa' }]}>No commands yet. Pull to refresh.</Text>
+      ) : (
+        [...log].reverse().map(entry => (
+          <View key={entry.id} style={[styles.logEntry, { backgroundColor: dark ? '#1e1e1e' : '#f9f9f9', borderColor: dark ? '#333' : '#e0e0e0' }]}>
+            <View style={styles.logHeader}>
+              <Text style={[styles.logCommand, { color: dark ? '#fff' : '#000' }]}>{entry.command}</Text>
+              <View style={[styles.logBadge, { backgroundColor: statusColor(entry.status) + '22' }]}>
+                <Text style={[styles.logStatus, { color: statusColor(entry.status) }]}>{entry.status}</Text>
+              </View>
+            </View>
+            {entry.reason && (
+              <Text style={[styles.logReason, { color: dark ? '#aaa' : '#666' }]}>{entry.reason}</Text>
+            )}
+            <Text style={[styles.logTime, { color: dark ? '#555' : '#bbb' }]}>
+              {new Date(entry.timestamp).toLocaleTimeString()}
+            </Text>
+          </View>
+        ))
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
     padding: 24,
     paddingTop: 48,
+    paddingBottom: 40,
   },
   name: {
     fontSize: 24,
@@ -90,4 +131,49 @@ const styles = StyleSheet.create({
   label: {
     fontSize: 15,
   },
+  sectionTitle: {
+    fontSize: 17,
+    fontWeight: '600',
+    marginTop: 32,
+    marginBottom: 12,
+  },
+  emptyLog: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  logEntry: {
+    borderRadius: 10,
+    padding: 12,
+    marginBottom: 8,
+    borderWidth: 1,
+  },
+  logHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  logCommand: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  logBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  logStatus: {
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  logReason: {
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  logTime: {
+    fontSize: 11,
+  },
 });
+
+
